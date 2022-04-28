@@ -1,0 +1,92 @@
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+# NOTE: cuda_library cuda_objects is only used in macros defined nccl.bzl
+load(":nccl.bzl", "nccl_collectives", "perf_binaries")
+
+expand_template(
+    name = "nccl_h",
+    out = "nccl/src/include/nccl.h",
+    substitutions = {
+        "${nccl:Major}": "2",
+        "${nccl:Minor}": "12",
+        "${nccl:Patch}": "10",
+        "${nccl:Suffix}": "",
+        "${nccl:Version}": "21210",  # NCCL_VERSION(X,Y,Z) ((X) * 10000 + (Y) * 100 + (Z))
+    },
+    template = "nccl/src/nccl.h.in",
+)
+
+cc_library(
+    name = "nccl_include",
+    hdrs = [
+        ":nccl_h",
+    ] + glob([
+        "nccl/src/include/**/*.h",
+        "nccl/src/include/**/*.hpp",
+    ]),
+    includes = [
+        # this will add both nccl/src/include in repo and
+        # bazel-out/<compilation_mode>/bin/nccl/src/include to include paths
+        # so the previous expand_template generate nccl.h to the vary path!
+        "nccl/src/include",
+    ],
+)
+
+filegroup(
+    name = "collective_dev_hdrs",
+    srcs = [
+        "nccl/src/collectives/device/all_gather.h",
+        "nccl/src/collectives/device/all_reduce.h",
+        "nccl/src/collectives/device/broadcast.h",
+        "nccl/src/collectives/device/common.h",
+        "nccl/src/collectives/device/common_kernel.h",
+        "nccl/src/collectives/device/gen_rules.sh",
+        "nccl/src/collectives/device/op128.h",
+        "nccl/src/collectives/device/primitives.h",
+        "nccl/src/collectives/device/prims_ll.h",
+        "nccl/src/collectives/device/prims_ll128.h",
+        "nccl/src/collectives/device/prims_simple.h",
+        "nccl/src/collectives/device/reduce.h",
+        "nccl/src/collectives/device/reduce_kernel.h",
+        "nccl/src/collectives/device/reduce_scatter.h",
+        "nccl/src/collectives/device/sendrecv.h",
+    ],
+)
+
+nccl_collectives(
+    name = "collectives_dev",
+    hdrs = [":collective_dev_hdrs"],
+    # FIXME: this must be manually disabled if cuda version is lower than 11.
+    # rules_cuda do not have a builtin macro to support it at the moment.
+    use_bf16 = 1,
+    deps = [":nccl_include"],
+)
+
+cc_binary(
+    name = "nccl",
+    srcs = glob([
+        "nccl/src/*.cc",
+        "nccl/src/collectives/*.cc",
+        "nccl/src/graph/*.cc",
+        "nccl/src/graph/*.h",
+        "nccl/src/misc/*.cc",
+        "nccl/src/transport/*.cc",
+    ], exclude = [
+        # https://github.com/NVIDIA/nccl/issues/658
+        "nccl/src/enhcompat.cc",
+    ]),
+    linkshared = 1,
+    linkstatic = 1,
+    deps = [
+        ":collectives_dev",
+        ":nccl_include",
+        "@rules_cuda//cuda:runtime",
+    ],
+)
+
+cc_library(
+    name = "nccl_tests_include",
+    hdrs = glob(["nccl-tests/src/*.h"]),
+    includes = ["nccl-tests/src"],
+)
+
+perf_binaries(name = "perf_binaries")
