@@ -1,0 +1,8 @@
+build --flag_alias=cuda_archs=@rules_cuda//cuda:archs
+
+build:gcc --copt=-std=c++17
+
+build:msvc --copt=/std:c++17
+build:msvc --copt=/permissive-
+build:msvc --copt=/W3
+build:msvc --copt=/Zc:preprocessor

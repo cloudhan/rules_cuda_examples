@@ -1,0 +1,152 @@
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+load("@rules_cuda//cuda:defs.bzl", "cuda_library")
+load(":nvbench.bzl", "nvbench_examples")
+
+expand_template(
+    name = "config_cuh",
+    out = "nvbench_generated/nvbench/config.cuh",
+    substitutions = {
+        "#cmakedefine NVBENCH_HAS_NVML": "#define NVBENCH_HAS_NVML 1",
+        "#cmakedefine NVBENCH_HAS_CUPTI": "#define NVBENCH_HAS_CUPTI 1",
+    },
+    template = "nvbench/nvbench/config.cuh.in",
+)
+
+genrule(
+    name = "nvbench_detail_version_cuh",
+    outs = ["nvbench_generated/nvbench/detail/version.cuh"],
+    cmd = """
+echo "#pragma once\n" > "$@" && \
+echo "#define NVBench_VERSION_MAJOR 0" >> "$@" && \
+echo "#define NVBench_VERSION_MINOR 0" >> "$@" && \
+echo "#define NVBench_VERSION_PATCH 0" >> "$@"
+""",
+)
+
+genrule(
+    name = "nvbench_detail_git_revision_cuh",
+    outs = ["nvbench_generated/nvbench/detail/git_revision.cuh"],
+    cmd = """
+echo '#pragma once\n' > '$@' && \
+echo '#define NVBench_GIT_BRANCH "<unknown>"' >> '$@' && \
+echo '#define NVBench_GIT_SHA1 "<unknown>"' >> '$@' && \
+echo '#define NVBench_GIT_VERSION "<unknown>"' >> '$@'
+""",
+)
+
+genrule(
+    name = "nvbench_internal_cli_help_cuh",
+    srcs = ["nvbench/docs/cli_help.md"],
+    outs = ["nvbench_generated/nvbench/internal/cli_help.cuh"],
+    cmd = """
+echo '#pragma once' > '$@' && \
+echo '#include <string>' >> '$@' && \
+echo 'namespace  {' >> '$@' && \
+echo 'const std::string cli_help_text =\nR"expected(' >> '$@' && \
+cat "$<" >> '$@' && \
+echo ')expected";\n}' >> '$@'
+""",
+)
+
+genrule(
+    name = "nvbench_internal_cli_help_axis_cuh",
+    srcs = ["nvbench/docs/cli_help_axis.md"],
+    outs = ["nvbench_generated/nvbench/internal/cli_help_axis.cuh"],
+    cmd = """
+echo '#pragma once' > '$@' && \
+echo '#include <string>' >> '$@' && \
+echo 'namespace  {' >> '$@' && \
+echo 'const std::string cli_help_axis_text =\nR"expected(' >> '$@' && \
+cat "$<" >> '$@' && \
+echo ')expected";\n}' >> '$@'
+""",
+)
+
+genrule(
+    name = "nvbench_nvml_cxx_device_info_cu_init_order_fix",
+    srcs = [
+        "nvbench/nvbench/device_info.cu",
+        # This file is really badly designed!!!!!! The undefined initialization order (across compilation units) makes
+        # nvbench cannot be used as a static library https://isocpp.org/wiki/faq/ctors#static-init-order
+        "nvbench/nvbench/internal/nvml.cxx",
+    ],
+    outs = ["nvbench_generated/nvml_and_device_info.cu"],
+    cmd = """ for f in '$(SRCS)'; do cat $$f >> '$@'; done """,
+)
+
+cc_library(
+    name = "nvbench_include",
+    hdrs = [
+        ":config_cuh",
+        ":nvbench_detail_version_cuh",
+        ":nvbench_detail_git_revision_cuh",
+        ":nvbench_internal_cli_help_cuh",
+        ":nvbench_internal_cli_help_axis_cuh",
+    ] + glob(["nvbench/nvbench/**/*.cuh"]),
+    includes = [
+        "nvbench",
+        "nvbench_generated",
+    ],
+    textual_hdrs = ["nvbench/nvbench/json_printer.cu"],
+    deps = [
+        "@fmt",
+        "@local_cuda//:cuda_headers",
+        "@nlohmann_json//:json",
+    ],
+)
+
+cuda_library(
+    name = "nvbench_cu",
+    srcs = [":nvbench_nvml_cxx_device_info_cu_init_order_fix"] + glob(
+        ["nvbench/nvbench/**/*.cu"],
+        exclude = [
+            "nvbench/nvbench/main.cu",
+            "nvbench/nvbench/device_info.cu",
+        ],
+    ),
+    copts = ["-std=c++17"],
+    deps = [":nvbench_include"],
+    alwayslink = 1,
+)
+
+filegroup(
+    name = "nvbench_cu_objs",
+    srcs = [":nvbench_cu"],
+    output_group = "pic_objects",
+)
+
+cc_library(
+    name = "nvbench_static",
+    srcs = [":nvbench_cu_objs"] + glob(
+        ["nvbench/nvbench/**/*.cxx"],
+        exclude = [
+            "nvbench/nvbench/json_printer.cxx",
+            # see nvbench_nvml_cxx_device_info_cu_init_order_fix
+            "nvbench/nvbench/internal/nvml.cxx",
+        ],
+    ),
+    linkopts = ["-lstdc++fs"],
+    deps = [
+        ":nvbench_include",
+        "@local_cuda//:cuda",
+        "@local_cuda//:cupti",
+        "@local_cuda//:nvml",
+        "@local_cuda//:nvperf_host",
+        "@local_cuda//:nvperf_target",
+        "@rules_cuda//cuda:runtime",
+    ],
+    alwayslink = 1,
+)
+
+# FIXME: currently linking with this target cause unresolved external symbol on
+# windows for unknown reason
+cc_binary(
+    name = "nvbench_shared",
+    linkshared = 1,
+    linkstatic = 1,
+    deps = [
+        ":nvbench_static",
+    ],
+)
+
+nvbench_examples(name = "nvbench_examples")

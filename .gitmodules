@@ -4,3 +4,6 @@
 [submodule "nccl/nccl-tests"]
 	path = nccl/nccl-tests
 	url = https://github.com/NVIDIA/nccl-tests.git
+[submodule "nvbench/nvbench"]
+	path = nvbench/nvbench
+	url = https://github.com/NVIDIA/nvbench.git

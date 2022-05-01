@@ -1,0 +1,43 @@
+workspace(name = "nvbench")
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "bazel_skylib",
+    sha256 = "2e6fa9a61db799266072df115a719a14a9af0e8a630b1f770ef0bd757e68cd71",
+    strip_prefix = "bazel-skylib-de3035d605b4c89a62d6da060188e4ab0c5034b9",
+    urls = ["https://github.com/bazelbuild/bazel-skylib/archive/de3035d605b4c89a62d6da060188e4ab0c5034b9.tar.gz"],
+)
+
+load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
+
+bazel_skylib_workspace()
+
+http_archive(
+    name = "fmt",
+    build_file = "//:BUILD.fmt",
+    sha256 = "de3061d275cb5c09c30dd809fcb425dce5bfd1dededcb272231263c95de05c61",
+    strip_prefix = "fmt-b6f4ceaed0a0a24ccf575fab6c56dd50ccf6f1a9",
+    urls = ["https://github.com/fmtlib/fmt/archive/b6f4ceaed0a0a24ccf575fab6c56dd50ccf6f1a9.tar.gz"],
+    workspace_file_content = 'workspace(name = "fmt")',
+)
+
+http_archive(
+    name = "nlohmann_json",
+    build_file = "//:BUILD.nlohmann_json",
+    sha256 = "b1b92b169e42b5dc2a51b644ba3b3a414e2451d580331d43801244c7e863f060",
+    strip_prefix = "json-a6ee8bf9d94ef783f21f955d4125d5f3924d2c8e",
+    urls = ["https://github.com/nlohmann/json/archive/a6ee8bf9d94ef783f21f955d4125d5f3924d2c8e.tar.gz"],
+    workspace_file_content = 'workspace(name = "nlohmann_json")',
+)
+
+local_repository(
+    name = "rules_cuda",
+    path = "../../rules_cuda",
+)
+
+load("@rules_cuda//cuda:deps.bzl", "register_detected_cuda_toolchains", "rules_cuda_deps")
+
+rules_cuda_deps()
+
+register_detected_cuda_toolchains()
