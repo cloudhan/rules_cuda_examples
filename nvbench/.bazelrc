@@ -1,3 +1,4 @@
+build --spawn_strategy local
 build --flag_alias=cuda_archs=@rules_cuda//cuda:archs
 
 build:gcc --copt=-std=c++17

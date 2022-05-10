@@ -1,1 +1,2 @@
 build --flag_alias=cuda_archs=@rules_cuda//cuda:archs
+build --spawn_strategy local
