@@ -1,6 +1,6 @@
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 # NOTE: cuda_library cuda_objects is only used in macros defined nccl.bzl
-load(":nccl.bzl", "nccl_collectives", "perf_binaries")
+load(":nccl.bzl", "if_cuda_clang", "nccl_collectives", "perf_binaries")
 
 expand_template(
     name = "nccl_h",
@@ -74,6 +74,7 @@ cc_binary(
         # https://github.com/NVIDIA/nccl/issues/658
         "nccl/src/enhcompat.cc",
     ]),
+    copts = if_cuda_clang(["-xcu"]),
     linkshared = 1,
     linkstatic = 1,
     deps = [

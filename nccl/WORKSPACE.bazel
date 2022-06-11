@@ -15,13 +15,13 @@ bazel_skylib_workspace()
 
 http_archive(
     name = "rules_cuda",
-    sha256 = "fdd6afb9f6a34c2c72ab26757c402ee60893c5b97ce4c53cde9c530fc930d564",
-    strip_prefix = "rules_cuda-3654266bcf3c26b92b4c21cbc4b4f33bedf5704b",
-    urls = ["https://github.com/cloudhan/rules_cuda/archive/3654266bcf3c26b92b4c21cbc4b4f33bedf5704b.tar.gz"],
+    sha256 = "a3052288544dbf191018629ae5deb4ec82a190f5e51be2210a65c7a5e7acad70",
+    strip_prefix = "rules_cuda-f534446357ae2ea6844c2779eedadf32149e64bc",
+    urls = ["https://github.com/cloudhan/rules_cuda/archive/f534446357ae2ea6844c2779eedadf32149e64bc.tar.gz"],
 )
 # local_repository(
 #     name = "rules_cuda",
-#     path = "../../rules_cuda"
+#     path = "../../rules_cuda",
 # )
 
 load("@rules_cuda//cuda:deps.bzl", "register_detected_cuda_toolchains", "rules_cuda_deps")

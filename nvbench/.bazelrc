@@ -1,7 +1,15 @@
 build --spawn_strategy local
 build --flag_alias=cuda_archs=@rules_cuda//cuda:archs
+build --flag_alias=cuda_compiler=@rules_cuda//cuda:compiler
 
 build:gcc --copt=-std=c++17
+
+build:clang --repo_env=CC=clang
+build:clang --copt=-std=c++17
+build:clang --cuda_compiler=clang
+# Similar to https://discourse.llvm.org/t/cuda-cuda-device-code-does-not-support-variadic-functions-in-clang/60481
+# same as in the thread, compilation fails even if the following is added
+build:clang --copt=-Xclang=-fcuda-allow-variadic-functions
 
 build:msvc --copt=/std:c++17
 build:msvc --copt=/permissive-

@@ -19,6 +19,18 @@ load("@rules_cuda//cuda:defs.bzl", "cuda_library", "cuda_objects")
 # [1] https://docs.bazel.build/versions/main/command-line-reference.html#flag--experimental_use_hermetic_linux_sandbox
 # [2] https://forums.developer.nvidia.com/t/avoid-generating-temp-files-in-tmp-while-nvcc-compiling/197657/10
 
+def if_cuda_nvcc(if_true, if_false = []):
+    return select({
+        "@rules_cuda//cuda:compiler_is_nvcc": if_true,
+        "//conditions:default": if_false
+    })
+
+def if_cuda_clang(if_true, if_false = []):
+    return select({
+        "@rules_cuda//cuda:compiler_is_clang": if_true,
+        "//conditions:default": if_false
+    })
+
 # for nccl repo
 def nccl_collectives(name, hdrs, deps, use_bf16):
     primitives = ["sendrecv", "all_reduce", "all_gather", "broadcast", "reduce", "reduce_scatter"]
@@ -34,10 +46,8 @@ def nccl_collectives(name, hdrs, deps, use_bf16):
             "nccl/src/collectives/device/onerank_reduce.cu",
         ],
         hdrs = hdrs,
-        copts = [
-            "--extended-lambda",
-            "-Xptxas=-maxrregcount=96",
-        ],
+        copts = if_cuda_nvcc(["--extended-lambda"]),
+        ptxasopts = ["-maxrregcount=96"],
         deps = deps,
     )
 
@@ -57,10 +67,8 @@ def nccl_collectives(name, hdrs, deps, use_bf16):
                     srcs = [":{}_rename".format(_name)],
                     hdrs = hdrs + native.glob(["nccl/src/collectives/device/*.h"]),
                     deps = deps,
-                    copts = [
-                        "--extended-lambda",
-                        "-Xptxas=-maxrregcount=96",
-                    ],
+                    copts = if_cuda_nvcc(["--extended-lambda"]),
+                    ptxasopts = ["-maxrregcount=96"],
                     defines = ["NCCL_OP={}".format(opn), "NCCL_TYPE={}".format(dtn)],
                     includes = ["nccl/src/collectives/device"],
                 )

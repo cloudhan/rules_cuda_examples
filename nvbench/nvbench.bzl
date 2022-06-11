@@ -1,5 +1,11 @@
 load("@rules_cuda//cuda:defs.bzl", "cuda_library")
 
+def nvbench_is_buildable():
+    return select({
+        "@rules_cuda//cuda:compiler_is_nvcc": [],
+        "@rules_cuda//cuda:compiler_is_clang": ["@platforms//:incompatible"],
+    })
+
 def nvbench_examples(name):
     examples = ["axes", "enums", "exec_tag_sync", "exec_tag_timer", "skip", "stream", "throughput", "auto_throughput"]
 
@@ -9,6 +15,7 @@ def nvbench_examples(name):
         deps = [":nvbench_include"],
         copts = ["-std=c++17"],
         alwayslink = 1,
+        target_compatible_with = nvbench_is_buildable(),
     )
 
     targets = []
@@ -19,6 +26,7 @@ def nvbench_examples(name):
             deps = [":nvbench_include"],
             copts = ["-std=c++17"],
             alwayslink = 1,
+            target_compatible_with = nvbench_is_buildable(),
         )
 
         bin_name = "nvbench.example." + ex
