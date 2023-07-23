@@ -7,10 +7,10 @@ expand_template(
     out = "nccl/src/include/nccl.h",
     substitutions = {
         "${nccl:Major}": "2",
-        "${nccl:Minor}": "12",
-        "${nccl:Patch}": "10",
+        "${nccl:Minor}": "18",
+        "${nccl:Patch}": "3",
         "${nccl:Suffix}": "",
-        "${nccl:Version}": "21210",  # NCCL_VERSION(X,Y,Z) ((X) * 10000 + (Y) * 100 + (Z))
+        "${nccl:Version}": "21803",  # NCCL_VERSION(X,Y,Z) ((X) * 10000 + (Y) * 100 + (Z))
     },
     template = "nccl/src/nccl.h.in",
 )
@@ -26,7 +26,7 @@ cc_library(
     includes = [
         # this will add both nccl/src/include in repo and
         # bazel-out/<compilation_mode>/bin/nccl/src/include to include paths
-        # so the previous expand_template generate nccl.h to the vary path!
+        # so the previous expand_template generate nccl.h to the very path!
         "nccl/src/include",
     ],
 )
@@ -55,8 +55,7 @@ filegroup(
 nccl_collectives(
     name = "collectives_dev",
     hdrs = [":collective_dev_hdrs"],
-    # FIXME: this must be manually disabled if cuda version is lower than 11.
-    # rules_cuda do not have a builtin macro to support it at the moment.
+    # this must be manually disabled if cuda version is lower than 11.
     use_bf16 = 1,
     deps = [":nccl_include"],
 )

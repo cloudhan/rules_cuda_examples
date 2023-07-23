@@ -22,13 +22,13 @@ load("@rules_cuda//cuda:defs.bzl", "cuda_library", "cuda_objects")
 def if_cuda_nvcc(if_true, if_false = []):
     return select({
         "@rules_cuda//cuda:compiler_is_nvcc": if_true,
-        "//conditions:default": if_false
+        "//conditions:default": if_false,
     })
 
 def if_cuda_clang(if_true, if_false = []):
     return select({
         "@rules_cuda//cuda:compiler_is_clang": if_true,
-        "//conditions:default": if_false
+        "//conditions:default": if_false,
     })
 
 # for nccl repo
@@ -87,12 +87,22 @@ def perf_binaries(name):
 
     cuda_library(
         name = "nccl_tests_common",
-        srcs = ["nccl-tests/src/common.cu"],
+        srcs = [
+            "nccl-tests/src/common.cu",
+            "nccl-tests/verifiable/verifiable.cu",
+        ],
         deps = [":nccl_tests_include", ":nccl"],
     )
 
+    native.cc_library(
+        name = "timer",
+        srcs = ["nccl-tests/src/timer.cc"],
+        hdrs = ["nccl-tests/src/timer.h"],
+        alwayslink = 1,
+    )
     targets = []
     for perf_name in perf_names:
+
         cuda_library(
             name = perf_name,
             srcs = ["nccl-tests/src/{}.cu".format(perf_name)],
@@ -103,7 +113,7 @@ def perf_binaries(name):
         native.cc_binary(
             name = bin_name,
             srcs = [":nccl"],
-            deps = [":nccl_tests_common", ":" + perf_name],
+            deps = [":timer", ":nccl_tests_common", ":" + perf_name],
         )
 
         targets.append(":" + bin_name)
