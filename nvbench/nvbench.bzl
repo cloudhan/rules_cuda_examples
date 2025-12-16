@@ -38,7 +38,7 @@ def nvbench_examples(name):
                 ":nvbench_main",
                 ":_" + ex,
                 "@rules_cuda//cuda:runtime",
-                "@local_cuda//:cuda",
+                "@cuda//:cuda",
             ],
         )
         targets.append(":" + bin_name)

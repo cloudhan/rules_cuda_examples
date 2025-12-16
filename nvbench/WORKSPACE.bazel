@@ -33,17 +33,17 @@ http_archive(
 
 http_archive(
     name = "rules_cuda",
-    sha256 = "9039c00f5cfe0ac5ff1110d20706bc41d6dbd52c737f303e9a4cea0994ec19a9",
-    strip_prefix = "rules_cuda-0503ead4724517db445796cbcdfc8400ce88c853",
-    urls = ["https://github.com/cloudhan/rules_cuda/archive/0503ead4724517db445796cbcdfc8400ce88c853.tar.gz"],
+    sha256 = "20453e5f68063cefaccdf6578b450bfd283104e8c4148b7cad5b135e3b0f0f5d",
+    strip_prefix = "rules_cuda-c5250c89904728af87c49b24eaab9e1e35e4649a",
+    urls = ["https://github.com/cloudhan/rules_cuda/archive/c5250c89904728af87c49b24eaab9e1e35e4649a.tar.gz"],
 )
 # local_repository(
 #     name = "rules_cuda",
 #     path = "../../rules_cuda",
 # )
 
-load("@rules_cuda//cuda:repositories.bzl", "register_detected_cuda_toolchains", "rules_cuda_dependencies")
+load("@rules_cuda//cuda:repositories.bzl", "rules_cuda_dependencies", "rules_cuda_toolchains")
 
 rules_cuda_dependencies()
 
-register_detected_cuda_toolchains()
+rules_cuda_toolchains(register_toolchains = True)
